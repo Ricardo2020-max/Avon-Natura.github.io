@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avon & Natura</title>
+    <!-- Inclui o Tailwind CSS para estilos rápidos e responsivos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Define a fonte Inter para todo o corpo do documento */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Estilos para os modais */
+        .modal {
+            display: none; /* Escondido por padrão */
+            position: fixed; /* Fixado na tela */
+            z-index: 1000; /* Acima de outros elementos */
+            left: 0;
+            top: 0;
+            width: 100%; /* Largura total */
+            height: 100%; /* Altura total */
+            overflow: auto; /* Adiciona scroll se o conteúdo for maior */
+            background-color: rgba(0,0,0,0.7); /* Fundo semi-transparente */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto; /* Centraliza vertical e horizontalmente */
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%; /* Largura padrão */
+            max-width: 600px; /* Largura máxima */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            position: relative;
+            transform: scale(0.9); /* Inicia menor para animação */
+            opacity: 0; /* Inicia transparente para animação */
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+        }
+        .modal.active {
+            display: flex; /* Torna o modal visível como flex container quando ativo */
+        }
+        .modal.active .modal-content {
+            transform: scale(1); /* Expande para o tamanho normal */
+            opacity: 1; /* Torna visível */
+        }
+        .close-button {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: #333;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Estilos para a notificação */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4CAF50; /* Verde */
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .notification.show {
+            opacity: 1;
+        }
+
+        /* Estilos para as abas de navegação */
+        .tab-button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            margin: 0 5px;
+        }
+        .tab-button.active {
+            background-color: white;
+            color: #8B5CF6; /* Cor roxa do Tailwind */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .tab-button:not(.active):hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-100 to-pink-100 text-gray-900">
+
+    <!-- Cabeçalho da página -->
+    <header class="bg-purple-700 text-white p-6 shadow-md rounded-b-xl">
+        <div class="container mx-auto flex flex-col sm:flex-row justify-between items-center">
+            <div class="text-center sm:text-left mb-4 sm:mb-0">
+                <h1 class="text-4xl font-extrabold mb-2">Avon & Natura by Mirian</h1>
+                <p class="text-lg">Sua loja online de beleza com preços especiais!</p>
+            </div>
+            <!-- Botão Meu Carrinho -->
+            <button id="cart-button" class="relative bg-pink-600 text-white p-3 rounded-full shadow-md hover:bg-pink-700 transition duration-300 flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 0a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                <span id="cart-count">Carrinho (0)</span>
+            </button>
+        </div>
+        <!-- Abas de Navegação -->
+        <nav class="mt-6 flex justify-center">
+            <button id="natura-tab-button" class="tab-button active">Produtos Natura</button>
+            <button id="avon-tab-button" class="tab-button">Produtos Avon</button>
+        </nav>
+    </header>
+
+    <!-- Seção principal de produtos -->
+    <main class="container mx-auto p-6">
+        <h2 class="text-3xl font-bold text-center text-purple-800 mb-8">Nossos Produtos</h2>
+        <!-- Contêiner onde os cartões de produtos serão injetados pelo JavaScript -->
+        <div id="products-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 justify-items-center">
+            <!-- Os produtos serão carregados aqui -->
+        </div>
+    </main>
+
+    <!-- Seção de Contato -->
+    <section class="bg-pink-500 text-white p-8 mt-10 rounded-t-xl shadow-lg">
+        <div class="container mx-auto text-center">
+            <h2 class="text-3xl font-bold mb-4">Entre em Contato!</h2>
+            <p class="text-lg mb-4">Quer saber mais sobre nossos produtos ou fazer um pedido?</p>
+            <div class="flex flex-col items-center space-y-3">
+                <!-- Exemplo de contato, substitua com as informações reais da sua mãe -->
+                <a
+                    href="https://wa.me/5546999999999" <!-- Substitua pelo número de WhatsApp real -->
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="bg-white text-pink-700 font-semibold py-3 px-6 rounded-full shadow-md hover:bg-gray-100 transition duration-300"
+                >
+                    Fale Conosco pelo WhatsApp
+                </a>
+                <p class="text-md">Ou ligue: (XX) XXXX-XXXX</p> <!-- Substitua pelo telefone real -->
+                <p class="text-md">Email: [email da sua mãe]@example.com</p> <!-- Substitua pelo email real -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Rodapé da página -->
+    <footer class="bg-purple-900 text-white p-4 text-center rounded-t-xl">
+        <div class="container mx-auto">
+            <p>&copy; <span id="current-year"></span> Avon & Natura by Mirian. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <!-- Notificação de sucesso -->
+    <div id="notification" class="notification"></div>
+
+    <!-- Modal de Detalhes do Produto (agora com "Adicionar ao Carrinho") -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" id="close-product-modal-button">&times;</span>
+            <img id="modal-product-image" src="" alt="Imagem do Produto" class="w-full h-64 object-cover rounded-md mb-4" />
+            <h3 id="modal-product-name" class="text-2xl font-bold text-gray-800 mb-2"></h3>
+            <p id="modal-product-description" class="text-gray-700 mb-4"></p>
+            <div class="flex items-center justify-between mb-6">
+                <span id="modal-regular-price" class="text-gray-500 line-through text-lg mr-2"></span>
+                <span id="modal-adjusted-price" class="text-purple-700 font-bold text-2xl"></span>
+            </div>
+            <div class="flex flex-col space-y-3">
+                <button
+                    id="add-to-cart-button"
+                    class="block w-full bg-purple-600 text-white text-center font-semibold py-3 px-6 rounded-full shadow-md hover:bg-purple-700 transition duration-300"
+                >
+                    Adicionar ao Carrinho
+                </button>
+                <a
+                    id="modal-buy-now-button"
+                    href="#"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="block w-full bg-pink-600 text-white text-center font-semibold py-3 px-6 rounded-full shadow-md hover:bg-pink-700 transition duration-300"
+                >
+                    Comprar Este Produto
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Novo Modal do Carrinho -->
+    <div id="cart-modal" class="modal">
+        <div class="modal-content max-w-lg">
+            <span class="close-button" id="close-cart-modal-button">&times;</span>
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center">Seu Carrinho</h3>
+            <div id="cart-items-list" class="space-y-4 mb-6 max-h-80 overflow-y-auto pr-2">
+                <!-- Itens do carrinho serão inseridos aqui pelo JavaScript -->
+            </div>
+            <div class="flex justify-between items-center border-t border-gray-200 pt-4 mt-4">
+                <span class="text-xl font-semibold">Total:</span>
+                <span id="cart-total" class="text-pink-700 font-bold text-2xl">R$ 0,00</span>
+            </div>
+            <div class="flex flex-col space-y-3 mt-6">
+                <button
+                    id="clear-cart-button"
+                    class="block w-full bg-gray-400 text-white text-center font-semibold py-3 px-6 rounded-full shadow-md hover:bg-gray-500 transition duration-300"
+                >
+                    Limpar Carrinho
+                </button>
+                <a
+                    id="finalize-purchase-button"
+                    href="#"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="block w-full bg-green-500 text-white text-center font-semibold py-3 px-6 rounded-full shadow-md hover:bg-green-600 transition duration-300"
+                >
+                    Comprar Tudo no WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Define os dados dos produtos
+        const naturaProducts = [
+            {
+                id: 1,
+                image: 'https://placehold.co/400x300/ffbbdd/663399?text=Perfume+Essencial',
+                name: 'Perfume Essencial Oud Natura',
+                description: 'Fragrância marcante e sofisticada, ideal para ocasiões especiais. Floral e amadeirado.',
+                regularPrice: 219.90,
+                adjustedPrice: 189.90,
+            },
+            {
+                id: 3,
+                image: 'https://placehold.co/400x300/ccffcc/339933?text=Batom+Hidratante',
+                name: 'Batom Hidratante Faces Natura',
+                description: 'Cores vibrantes e hidratação intensa para seus lábios. Várias opções de cores.',
+                regularPrice: 32.90,
+                adjustedPrice: 25.50,
+            },
+            {
+                id: 4,
+                image: 'https://placehold.co/400x300/ddeeff/336699?text=Perfume+Kriska',
+                name: 'Perfume Kriska Drama Natura',
+                description: 'Fragrância doce e envolvente, para mulheres que gostam de se destacar.',
+                regularPrice: 120.00,
+                adjustedPrice: 99.90,
+            },
+            {
+                id: 6,
+                image: 'https://placehold.co/400x300/ccffee/228855?text=Creme+Corporal',
+                name: 'Creme Desodorante Corporal Tododia Natura',
+                description: 'Hidratação profunda e perfumação para todo o corpo. Textura leve.',
+                regularPrice: 55.00,
+                adjustedPrice: 48.00,
+            },
+            {
+                id: 7,
+                image: 'https://placehold.co/400x300/e6e6fa/800080?text=Natura+Produto+7',
+                name: 'Hidratante Corporal Natura',
+                description: 'Hidratante com fragrância suave para uso diário.',
+                regularPrice: 45.00,
+                adjustedPrice: 38.00,
+            },
+            {
+                id: 9,
+                image: 'https://placehold.co/400x300/afeeee/008080?text=Natura+Produto+9',
+                name: 'Sabonete Líquido Natura',
+                description: 'Sabonete suave para limpeza da pele, com extratos naturais.',
+                regularPrice: 28.00,
+                adjustedPrice: 22.90,
+            },
+            {
+                id: 10,
+                image: 'https://placehold.co/400x300/faebd7/d2691e?text=Natura+Produto+11',
+                name: 'Colônia Kaiak Natura',
+                description: 'Fragrância fresca e vibrante, perfeita para o dia a dia.',
+                regularPrice: 130.00,
+                adjustedPrice: 105.00,
+            },
+            {
+                id: 11,
+                image: 'https://placehold.co/400x300/add8e6/4682b4?text=Natura+Produto+13',
+                name: 'Desodorante Roll-on Natura',
+                description: 'Proteção 24h e perfumação delicada.',
+                regularPrice: 18.00,
+                adjustedPrice: 14.50,
+            },
+            {
+                id: 12,
+                image: 'https://placehold.co/400x300/ffb6c1/db7093?text=Natura+Produto+15',
+                name: 'Creme para Mãos Natura',
+                description: 'Hidratação intensiva para mãos e unhas.',
+                regularPrice: 25.00,
+                adjustedPrice: 20.00,
+            },
+            {
+                id: 13,
+                image: 'https://placehold.co/400x300/d8bfd8/8a2be2?text=Natura+Produto+19',
+                name: 'Essência de Ambiente Natura',
+                description: 'Perfume seu lar com fragrâncias inspiradoras.',
+                regularPrice: 60.00,
+                adjustedPrice: 50.00,
+            },
+            {
+                id: 14,
+                image: 'https://placehold.co/400x300/e0ffff/00ced1?text=Natura+Produto+20',
+                name: 'Protetor Solar Facial Natura',
+                description: 'Proteção UVA/UVB alta com toque seco.',
+                regularPrice: 75.00,
+                adjustedPrice: 65.00,
+            },
+            {
+                id: 15,
+                image: 'https://placehold.co/400x300/ffdab9/ff6347?text=Natura+Produto+21',
+                name: 'Gloss Labial Natura Una',
+                description: 'Brilho intenso e hidratação para os lábios.',
+                regularPrice: 40.00,
+                adjustedPrice: 32.00,
+            },
+            {
+                id: 16,
+                image: 'https://placehold.co/400x300/ffe4e1/cd5c5c?text=Natura+Produto+22',
+                name: 'Óleo Corporal Sève Natura',
+                description: 'Hidratação e toque aveludado pós-banho.',
+                regularPrice: 80.00,
+                adjustedPrice: 68.00,
+            },
+            {
+                id: 17,
+                image: 'https://placehold.co/400x300/f0e68c/a0522d?text=Natura+Produto+23',
+                name: 'Máscara Capilar Natura',
+                description: 'Nutrição e reparação profunda para os fios.',
+                regularPrice: 55.00,
+                adjustedPrice: 45.00,
+            },
+            {
+                id: 18,
+                image: 'https://placehold.co/400x300/c0c0c0/708090?text=Natura+Produto+24',
+                name: 'Água de Cheiro Natura',
+                description: 'Leve e refrescante, para perfumar a qualquer hora.',
+                regularPrice: 70.00,
+                adjustedPrice: 58.00,
+            },
+            {
+                id: 19,
+                image: 'https://placehold.co/400x300/b0e0e6/4682b4?text=Natura+Produto+25',
+                name: 'Sérum Facial Chronos Natura',
+                description: 'Rejuvenescedor, hidrata e firma a pele.',
+                regularPrice: 150.00,
+                adjustedPrice: 125.00,
+            },
+            {
+                id: 20,
+                image: 'https://placehold.co/400x300/dda0dd/800080?text=Natura+Produto+26',
+                name: 'Esfoliante Corporal Natura',
+                description: 'Remove células mortas e deixa a pele macia.',
+                regularPrice: 40.00,
+                adjustedPrice: 32.00,
+            },
+            {
+                id: 21,
+                image: 'https://placehold.co/400x300/98fb98/3cb371?text=Natura+Produto+27',
+                name: 'Shampoo Ekos Natura',
+                description: 'Limpeza suave e brilho para todos os tipos de cabelo.',
+                regularPrice: 30.00,
+                adjustedPrice: 24.00,
+            },
+            {
+                id: 23,
+                image: 'https://placehold.co/400x300/f5deb3/d2691e?text=Natura+Produto+28',
+                name: 'Refil Desodorante Corporal Natura',
+                description: 'Opção sustentável para repor seu desodorante favorito.',
+                regularPrice: 40.00,
+                adjustedPrice: 32.00,
+            },
+            {
+                id: 24,
+                image: 'https://placehold.co/400x300/f5deb3/d2691e?text=Natura+Produto+28',
+                name: 'Refil Desodorante Corporal Natura',
+                description: 'Opção sustentável para repor seu desodorante favorito.',
+                regularPrice: 40.00,
+                adjustedPrice: 32.00,
+            },
+            {
+                id: 25,
+                image: 'https://placehold.co/400x300/f5deb3/d2691e?text=Natura+Produto+28',
+                name: 'Refil Desodorante Corporal Natura',
+                description: 'Opção sustentável para repor seu desodorante favorito.',
+                regularPrice: 40.00,
+                adjustedPrice: 32.00,
+            },
+        ];
+
+        const avonProducts = [
+            {
+                id: 1,
+                image: 'https://placehold.co/400x300/ffccaa/996633?text=Maquiagem+Base',
+                name: 'Base Líquida FPS 15 Avon',
+                description: 'Cobertura perfeita e proteção solar para o dia a dia. Acabamento matte.',
+                regularPrice: 65.00,
+                adjustedPrice: 49.99,
+            },
+            {
+                id: 2,
+                image: 'https://placehold.co/400x300/eeddcc/995522?text=Máscara+Cílios',
+                name: 'Máscara para Cílios Supershock Max Avon',
+                description: 'Volume máximo e alongamento para seus cílios. Sem grumos.',
+                regularPrice: 45.90,
+                adjustedPrice: 35.00,
+            },
+            {
+                id: 3,
+                image: 'https://placehold.co/400x300/fff0f5/ff69b4?text=Avon+Produto+8',
+                name: 'Corretivo Líquido Avon',
+                description: 'Cobre imperfeições e olheiras com acabamento natural.',
+                regularPrice: 38.00,
+                adjustedPrice: 30.00,
+            },
+            {
+                id: 4,
+                image: 'https://placehold.co/400x300/ffe4e1/cd5c5c?text=Avon+Produto+10',
+                name: 'Perfume Far Away Avon',
+                description: 'Fragrância clássica e envolvente, floral e oriental.',
+                regularPrice: 99.90,
+                adjustedPrice: 79.90,
+            },
+            {
+                id: 5,
+                image: 'https://placehold.co/400x300/f0e68c/a0522d?text=Avon+Produto+12',
+                name: 'Batom Matte Avon',
+                description: 'Cores intensas e acabamento matte aveludado.',
+                regularPrice: 29.90,
+                adjustedPrice: 23.90,
+            },
+            {
+                id: 6,
+                image: 'https://placehold.co/400x300/90ee90/32cd32?text=Avon+Produto+14',
+                name: 'Delineador Líquido Avon',
+                description: 'Traço preciso e longa duração para um olhar marcante.',
+                regularPrice: 35.00,
+                adjustedPrice: 28.00,
+            },
+            {
+                id: 7,
+                image: 'https://placehold.co/400x300/dda0dd/800080?text=Avon+Produto+16',
+                name: 'Pó Compacto Avon',
+                description: 'Controla a oleosidade e uniformiza o tom da pele.',
+                regularPrice: 50.00,
+                adjustedPrice: 40.00,
+            },
+            {
+                id: 8,
+                image: 'https://placehold.co/400x300/ffe4b5/ff8c00?text=Avon+Produto+17',
+                name: 'Loção Corporal Avon Care',
+                description: 'Hidratação 24h para uma pele macia e suave.',
+                regularPrice: 22.00,
+                adjustedPrice: 17.50,
+            },
+            {
+                id: 9,
+                image: 'https://placehold.co/400x300/d3d3d3/696969?text=Avon+Produto+18',
+                name: 'Esmalte Color Trend Avon',
+                description: 'Cores vibrantes e secagem rápida para suas unhas.',
+                regularPrice: 10.00,
+                adjustedPrice: 8.00,
+            },
+            
+            {
+                id: 10,
+                image: 'https://placehold.co/400x300/ffc0cb/ff1493?text=Avon+Produto+29',
+                name: 'Perfume TTA Today Avon',
+                description: 'Fragrância floral amadeirada, elegante e sofisticada.',
+                regularPrice: 110.00,
+                adjustedPrice: 90.00,
+            },
+            {
+                id: 11,
+                image: 'https://placehold.co/400x300/ffe4e1/cd5c5c?text=Avon+Produto+30',
+                name: 'Demaquilante Bifásico Avon',
+                description: 'Remove maquiagem à prova dágua sem esforço.',
+                regularPrice: 42.00,
+                adjustedPrice: 34.00,
+            },
+            {
+                id: 12,
+                image: 'https://placehold.co/400x300/a2d2ff/4a90e2?text=Avon+Produto+31',
+                name: 'Creme para Pés Avon Care',
+                description: 'Hidratação profunda para pés ressecados.',
+                regularPrice: 20.00,
+                adjustedPrice: 16.00,
+            },
+            {
+                id: 13,
+                image: 'https://placehold.co/400x300/b0e0e6/6a5acd?text=Avon+Produto+32',
+                name: 'Gel para Sobrancelhas Avon',
+                description: 'Define e fixa as sobrancelhas para um olhar perfeito.',
+                regularPrice: 28.00,
+                adjustedPrice: 22.00,
+            },
+            {
+                id: 14,
+                image: 'https://placehold.co/400x300/d3d3d3/696969?text=Avon+Produto+33',
+                name: 'Lápis de Olho Preto Avon',
+                description: 'Cor intensa e longa duração para o contorno dos olhos.',
+                regularPrice: 25.00,
+                adjustedPrice: 19.90,
+            },
+            {
+                id: 15,
+                image: 'https://placehold.co/400x300/f0e68c/b8860b?text=Avon+Produto+34',
+                name: 'Blush Compacto Avon',
+                description: 'Realça as maçãs do rosto com cor natural.',
+                regularPrice: 48.00,
+                adjustedPrice: 38.00,
+            },
+            {
+                id: 16,
+                image: 'https://placehold.co/400x300/e6e6fa/9370db?text=Avon+Produto+35',
+                name: 'Água Micelar Avon',
+                description: 'Limpa, demaquila e tonifica a pele suavemente.',
+                regularPrice: 35.00,
+                adjustedPrice: 28.00,
+            },
+            {
+                id: 17,
+                image: 'https://placehold.co/400x300/fff8dc/daaa00?text=Avon+Produto+36',
+                name: 'Creme para as Mãos Erva Doce Avon',
+                description: 'Hidratação e perfume relaxante para as mãos.',
+                regularPrice: 22.00,
+                adjustedPrice: 17.00,
+            },
+            {
+                id: 18,
+                image: 'https://placehold.co/400x300/ffffe0/b5a642?text=Avon+Produto+37',
+                name: 'Sombra para Olhos Avon',
+                description: 'Cores vibrantes para criar looks incríveis.',
+                regularPrice: 30.00,
+                adjustedPrice: 24.00,
+            },
+            {
+                id: 19,
+                image: 'https://placehold.co/400x300/afeeee/5f9ea0?text=Avon+Produto+38',
+                name: 'Avon Care Protetor Labial',
+                description: 'Protege e hidrata os lábios contra o ressecamento.',
+                regularPrice: 15.00,
+                adjustedPrice: 12.00,
+            },
+            {
+                id: 20,
+                image: 'https://placehold.co/400x300/afeeee/5f9ea0?text=Avon+Produto+38',
+                name: 'Avon Care Protetor Labial',
+                description: 'Protege e hidrata os lábios contra o ressecamento.',
+                regularPrice: 15.00,
+                adjustedPrice: 12.00,
+            },
+            {
+                id: 21,
+                image: 'https://placehold.co/400x300/afeeee/5f9ea0?text=Avon+Produto+38',
+                name: 'Avon Care Protetor Labial',
+                description: 'Protege e hidrata os lábios contra o ressecamento.',
+                regularPrice: 15.00,
+                adjustedPrice: 12.00,
+            },
+            {
+                id: 22,
+                image: 'https://placehold.co/400x300/afeeee/5f9ea0?text=Avon+Produto+38',
+                name: 'Avon Care Protetor Labial',
+                description: 'Protege e hidrata os lábios contra o ressecamento.',
+                regularPrice: 15.00,
+                adjustedPrice: 12.00,
+            },
+            {
+                id: 23,
+                image: 'https://placehold.co/400x300/afeeee/5f9ea0?text=Avon+Produto+38',
+                name: 'Avon Care Protetor Labial',
+                description: 'Protege e hidrata os lábios contra o ressecamento.',
+                regularPrice: 15.00,
+                adjustedPrice: 12.00,
+            },
+            {
+                id: 24,
+                image: 'https://placehold.co/400x300/afeeee/5f9ea0?text=Avon+Produto+38',
+                name: 'Avon Care Protetor Labial',
+                description: 'Protege e hidrata os lábios contra o ressecamento.',
+                regularPrice: 15.00,
+                adjustedPrice: 12.00,
+            },
+            {
+                id: 25,
+                image: 'https://placehold.co/400x300/afeeee/5f9ea0?text=Avon+Produto+38',
+                name: 'Avon Care Protetor Labial',
+                description: 'Protege e hidrata os lábios contra o ressecamento.',
+                regularPrice: 15.00,
+                adjustedPrice: 12.00,
+            },
+        ];
+
+
+        // --- Variáveis Globais e Referências de Elementos ---
+        let cart = []; // Array para armazenar os produtos no carrinho
+        const whatsappNumber = '5546999999999'; // Número de WhatsApp da sua mãe (substitua pelo número real)
+        let currentBrand = 'Natura'; // Começa mostrando os produtos Natura
+
+        // Elementos do Modal de Detalhes do Produto
+        const productModal = document.getElementById('product-modal');
+        const closeProductModalButton = document.getElementById('close-product-modal-button');
+        const modalProductImage = document.getElementById('modal-product-image');
+        const modalProductName = document.getElementById('modal-product-name');
+        const modalProductDescription = document.getElementById('modal-product-description');
+        const modalRegularPrice = document.getElementById('modal-regular-price');
+        const modalAdjustedPrice = document.getElementById('modal-adjusted-price');
+        const modalBuyNowButton = document.getElementById('modal-buy-now-button');
+        const addToCartButton = document.getElementById('add-to-cart-button'); // Novo botão
+
+        // Elementos do Modal do Carrinho
+        const cartButton = document.getElementById('cart-button');
+        const cartCountSpan = document.getElementById('cart-count');
+        const cartModal = document.getElementById('cart-modal');
+        const closeCartModalButton = document.getElementById('close-cart-modal-button');
+        const cartItemsList = document.getElementById('cart-items-list');
+        const cartTotalSpan = document.getElementById('cart-total');
+        const clearCartButton = document.getElementById('clear-cart-button');
+        const finalizePurchaseButton = document.getElementById('finalize-purchase-button');
+
+        // Elemento de Notificação
+        const notificationElement = document.getElementById('notification');
+
+        // Elementos das Abas
+        const naturaTabButton = document.getElementById('natura-tab-button');
+        const avonTabButton = document.getElementById('avon-tab-button');
+
+
+        // --- Funções do Modal de Detalhes do Produto ---
+
+        // Função para abrir o modal de detalhes do produto
+        function openProductModal(productId) {
+            // Busca o produto em ambas as listas
+            const allProducts = [...naturaProducts, ...avonProducts];
+            const product = allProducts.find(p => p.id === productId);
+
+            if (!product) {
+                console.error('Produto não encontrado:', productId);
+                return;
+            }
+
+            // Preenche o modal com os dados do produto
+            modalProductImage.src = product.image;
+            modalProductImage.alt = product.name;
+            modalProductName.textContent = product.name;
+            modalProductDescription.textContent = product.description;
+
+            // Formata e exibe os preços
+            if (product.regularPrice > 0) {
+                modalRegularPrice.textContent = `R$ ${product.regularPrice.toFixed(2).replace('.', ',')}`;
+                modalRegularPrice.style.display = 'inline'; // Garante que esteja visível
+            } else {
+                modalRegularPrice.style.display = 'none'; // Esconde se não houver preço regular
+            }
+            modalAdjustedPrice.textContent = `R$ ${product.adjustedPrice.toFixed(2).replace('.', ',')}`;
+
+            // Cria a mensagem para compra individual no WhatsApp
+            const whatsappMessageSingle = encodeURIComponent(
+                `Olá, tenho interesse em comprar apenas o produto "${product.name}" que vi no seu site. O preço é R$ ${product.adjustedPrice.toFixed(2).replace('.', ',')}. Poderia me ajudar com a compra?`
+            );
+            modalBuyNowButton.href = `https://wa.me/${5546999190534}?text=${whatsappMessageSingle}`;
+
+            // Adiciona o evento de adicionar ao carrinho para o produto atual
+            addToCartButton.onclick = () => {
+                addToCart(product);
+                closeProductModal(); // Fecha o modal após adicionar ao carrinho
+            };
+
+            // Exibe o modal
+            productModal.classList.add('active');
+        }
+
+        // Função para fechar o modal de detalhes do produto
+        function closeProductModal() {
+            productModal.classList.remove('active');
+        }
+
+        // --- Funções do Carrinho ---
+
+        // Função para adicionar um produto ao carrinho
+        function addToCart(product) {
+            const existingItem = cart.find(item => item.id === product.id);
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                cart.push({ ...product, quantity: 1 });
+            }
+            updateCartCountDisplay();
+            showNotification('Produto adicionado ao carrinho!');
+        }
+
+        // Função para remover um produto do carrinho
+        // Se a quantidade for maior que 1, diminui. Se for 1, remove o item.
+        function removeFromCart(productId) {
+            const itemIndex = cart.findIndex(item => item.id === productId);
+
+            if (itemIndex > -1) {
+                if (cart[itemIndex].quantity > 1) {
+                    cart[itemIndex].quantity--;
+                    showNotification(`Quantidade de "${cart[itemIndex].name}" reduzida.`);
+                } else {
+                    cart.splice(itemIndex, 1); // Remove o item completamente
+                    showNotification('Produto removido do carrinho!');
+                }
+            }
+            updateCartCountDisplay();
+            updateCartDisplay(); // Atualiza a lista no modal do carrinho
+        }
+
+
+        // Função para atualizar o contador de itens no carrinho no cabeçalho
+        function updateCartCountDisplay() {
+            const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+            cartCountSpan.textContent = `Carrinho (${totalItems})`;
+        }
+
+        // Função para abrir o modal do carrinho
+        function openCartModal() {
+            updateCartDisplay(); // Renderiza os itens e o total antes de abrir
+            cartModal.classList.add('active');
+        }
+
+        // Função para fechar o modal do carrinho
+        function closeCartModal() {
+            cartModal.classList.remove('active');
+        }
+
+        // Função para renderizar os itens no modal do carrinho e calcular o total
+        function updateCartDisplay() {
+            cartItemsList.innerHTML = ''; // Limpa a lista atual
+            let total = 0;
+
+            if (cart.length === 0) {
+                cartItemsList.innerHTML = '<p class="text-center text-gray-500">Seu carrinho está vazio.</p>';
+                finalizePurchaseButton.classList.add('opacity-50', 'cursor-not-allowed'); // Desabilita o botão
+                finalizePurchaseButton.href = '#';
+            } else {
+                finalizePurchaseButton.classList.remove('opacity-50', 'cursor-not-allowed'); // Habilita o botão
+                cart.forEach(item => {
+                    const itemElement = document.createElement('div');
+                    itemElement.className = 'flex justify-between items-center bg-gray-50 p-3 rounded-md shadow-sm';
+                    itemElement.innerHTML = `
+                        <div class="flex-grow">
+                            <span class="text-gray-800 font-medium">${item.name} (x${item.quantity})</span>
+                            <span class="block text-purple-600 font-semibold">R$ ${(item.adjustedPrice * item.quantity).toFixed(2).replace('.', ',')}</span>
+                        </div>
+                        <button class="bg-red-500 text-white text-xs px-2 py-1 rounded-full hover:bg-red-600 transition duration-300" onclick="removeFromCart(${item.id})">Remover</button>
+                    `;
+                    cartItemsList.appendChild(itemElement);
+                    total += item.adjustedPrice * item.quantity;
+                });
+            }
+
+            cartTotalSpan.textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
+
+            // Prepara a mensagem para "Comprar Tudo no WhatsApp"
+            let whatsappMessageAll = 'Olá, gostaria de finalizar meu pedido com os seguintes itens:\n\n';
+            if (cart.length === 0) {
+                whatsappMessageAll = 'Olá, meu carrinho está vazio, mas gostaria de conversar sobre os produtos.';
+            } else {
+                cart.forEach(item => {
+                    whatsappMessageAll += `- ${item.name} (x${item.quantity}) - R$ ${item.adjustedPrice.toFixed(2).replace('.', ',')} cada\n`;
+                });
+                whatsappMessageAll += `\nTotal: R$ ${total.toFixed(2).replace('.', ',')}\n`;
+                whatsappMessageAll += '\nPoderia me ajudar com a compra?';
+            }
+            finalizePurchaseButton.href = `https://wa.me/${5546999190534}?text=${encodeURIComponent(whatsappMessageAll)}`;
+        }
+
+        // Função para limpar o carrinho
+        function clearCart() {
+            cart = [];
+            updateCartCountDisplay();
+            updateCartDisplay();
+            showNotification('Carrinho limpo!');
+        }
+
+        // --- Funções de Notificação ---
+        function showNotification(message) {
+            notificationElement.textContent = message;
+            notificationElement.classList.add('show');
+            setTimeout(() => {
+                notificationElement.classList.remove('show');
+            }, 3000); // Esconde após 3 segundos
+        }
+
+        // --- Funções de Renderização de Produtos e Abas ---
+
+        // Função para criar um cartão de produto
+        function createProductCard(product) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl shadow-lg overflow-hidden flex flex-col p-4 m-4 max-w-sm w-full transform transition-all duration-300 hover:scale-105 cursor-pointer';
+            card.onclick = () => openProductModal(product.id); // Abre o modal de detalhes
+
+            card.innerHTML = `
+                <!-- Imagem do produto -->
+                <img
+                    src="${product.image}"
+                    alt="${product.name}"
+                    class="w-full h-48 object-cover rounded-md mb-4"
+                    onerror="this.onerror=null;this.src='https://placehold.co/400x300/e0e0e0/555555?text=Sem+Imagem';"
+                />
+                <div class="flex flex-col flex-grow">
+                    <!-- Nome do produto -->
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">${product.name}</h3>
+                    <!-- Descrição do produto -->
+                    <p class="text-gray-600 text-sm mb-3 flex-grow">${product.description}</p>
+                    <!-- Seção de preços -->
+                    <div class="flex items-center justify-between mt-auto">
+                        ${product.regularPrice > 0 ? `<span class="text-gray-500 line-through text-sm mr-2">R$ ${product.regularPrice.toFixed(2).replace('.', ',')}</span>` : ''}
+                        <span class="text-purple-700 font-bold text-lg">R$ ${product.adjustedPrice.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        // Função para renderizar os produtos com base na marca selecionada
+        function renderProducts() {
+            const productsContainer = document.getElementById('products-container');
+            productsContainer.innerHTML = ''; // Limpa os produtos existentes
+
+            let productsToDisplay = [];
+            if (currentBrand === 'Natura') {
+                productsToDisplay = naturaProducts;
+            } else if (currentBrand === 'Avon') {
+                productsToDisplay = avonProducts;
+            }
+
+            productsToDisplay.forEach(product => {
+                productsContainer.appendChild(createProductCard(product));
+            });
+        }
+
+        // Função para atualizar os estilos das abas (botões)
+        function updateTabStyles() {
+            naturaTabButton.classList.remove('active');
+            avonTabButton.classList.remove('active');
+
+            if (currentBrand === 'Natura') {
+                naturaTabButton.classList.add('active');
+            } else if (currentBrand === 'Avon') {
+                avonTabButton.classList.add('active');
+            }
+        }
+
+        // --- Event Listeners Globais ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializa a renderização dos produtos e o estado das abas
+            renderProducts();
+            updateTabStyles();
+
+            // Atualiza o ano no rodapé
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+
+            // Eventos para o Modal de Detalhes do Produto
+            closeProductModalButton.addEventListener('click', closeProductModal);
+            window.addEventListener('click', (event) => {
+                if (event.target === productModal) {
+                    closeProductModal();
+                }
+            });
+
+            // Eventos para o Modal do Carrinho
+            cartButton.addEventListener('click', openCartModal);
+            closeCartModalButton.addEventListener('click', closeCartModal);
+            window.addEventListener('click', (event) => {
+                if (event.target === cartModal) {
+                    closeCartModal();
+                }
+            });
+            clearCartButton.addEventListener('click', clearCart);
+
+            // Eventos para as Abas de Navegação
+            naturaTabButton.addEventListener('click', () => {
+                currentBrand = 'Natura';
+                renderProducts();
+                updateTabStyles();
+            });
+            avonTabButton.addEventListener('click', () => {
+                currentBrand = 'Avon';
+                renderProducts();
+                updateTabStyles();
+            });
+
+            updateCartCountDisplay(); // Inicializa o contador do carrinho
+        });
+    </script>
+</body>
+</html>
